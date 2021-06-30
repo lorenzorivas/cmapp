@@ -1,0 +1,172 @@
+{% load static %}
+
+{% url 'project:projects' as projects %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <meta name="description" content="" />
+  <meta name="author" content="" />
+  <title>PROMET {% block ttl %}{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'resume/favicon.png' %}" />
+  <!-- Font Awesome icons (free version)-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/fontawesome.min.css">
+  <script src="https://use.fontawesome.com/releases/v5.13.0/js/all.js" crossorigin="anonymous"></script>
+  <!-- Google fonts-->
+  <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet" type="text/css" />
+  <link href="https://fonts.googleapis.com/css?family=Muli:400,400i,800,800i" rel="stylesheet" type="text/css" />
+  <!-- Core theme CSS (includes Bootstrap)-->
+  <link href="{% static 'resume/css/styles2.css' %}" rel="stylesheet" />
+
+  <style media="screen">
+    tr {
+      border-top: hidden;
+      color: white;
+    }
+
+    .table_todo_project {
+      border: 1px solid #bb105a;
+    }
+
+    .table_todo_project th,
+    td {
+      padding: 5px;
+      font-weight: normal;
+    }
+
+    td {
+      background-color: #0a1424;
+      color: #6C757D;
+    }
+
+    .offscreen {
+      position: absolute;
+      left: -999em;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    pre {
+      background-color: #f1f1f1;
+      padding: 10px;
+      max-width: 865px;
+      max-height: 540px;
+    }
+
+    progress {
+      padding: 10px;
+      width: 100%;
+    }
+
+    .toast {
+      max-width: 100%;
+    }
+
+    .progress {
+      height: 25px;
+    }
+
+    .massive-font {
+      font-size: 25px;
+    }
+
+    .bgr-lef {
+      background-color: #bb105a;
+      color: white;
+    }
+
+</style>
+
+{% block style %}{% endblock %}
+
+</head>
+
+<body id="page-top">
+  <div class="container">
+
+    <!-- Navigation-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
+      <h3>
+        <a href="{% url 'project:projects' %}" style="color:white">PRO<span class="text-white">MET</span></a>
+      </h3>
+
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span
+          class="navbar-toggler-icon"></span></button>
+      {% block nav %}
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav">
+          {% block ul %}
+
+          <li class="nav-item"><a class="nav-link js-scroll-trigger {% if request.path == projects %} active{% endif %}" href="{% url 'project:projects' %}">Proyectos</a></li>
+
+
+
+          {% endblock %}
+          {% if user.is_authenticated %}
+          <li class="nav-item">
+            <div class="alert bg-light" role="alert">
+              Conectado como <span style="color:#bb105a">{{ user.username }}</span>
+              <a href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i></a>
+            </div>
+          </li>
+          {% else %}
+          <li class="nav-item"><a class="nav-link js-scroll-trigger active" href="{% url 'login' %}"><i class="fa fa-sign-in-alt"></i> Iniciar Sesión</a></li>
+          {% endif %}
+        </ul>
+
+      </div>
+      {% endblock %}
+
+
+
+    </nav>
+    <!-- Page Content-->
+    <div class="container-fluid p-0">
+      <!-- About-->
+      {% block title %}
+        {% block search %}
+
+        {% endblock %}
+      {% endblock %}
+
+    </div>
+  </div>
+  <!-- Bootstrap core JS-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+  <!-- Third party plugin JS-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+  <!-- Core theme JS-->
+  <script src="{% static 'resume/js/scripts.js' %}"></script>
+  <script type="text/javascript">
+    function pass() {
+      var copyText = document.getElementById("toCopy");
+      copyText.select();
+      document.execCommand("Copy");
+    }
+  </script>
+  <script>
+    $(document).ready(function() {
+      $(".toast").toast('show');
+    });
+  </script>
+  <script>
+    window.onload = function() {
+      document.getElementById("audio").play();
+    }
+  </script>
+  <script>
+    $(function() {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+  {% block js %}{% endblock %}
+</body>
+
+</html>

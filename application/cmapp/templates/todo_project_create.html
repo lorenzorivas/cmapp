@@ -1,0 +1,38 @@
+{% extends 'base_template.html' %}
+{% load crispy_forms_tags %}
+
+
+
+{% block title %}
+
+{% load bootstrap4 %}       {# import bootstrap4/bootstrap3 #}
+{% bootstrap_javascript jquery='full' %}  {# Embed Bootstrap JS+jQuery #}
+{{ form.media }}            {# Adds date-picker required JS and CSS #}
+
+<section class="resume-section" id="about">
+  <div class="resume-section-content">
+    <h2 class="mb-0">
+      <span style="color:#bb105a">.Agregar Tareas
+    </h2>
+    <form action="" method="post">
+      {% csrf_token %}
+      {{ form|crispy }}
+      <button type="submit" class="btn btn-primary">Crear</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+
+{% block js %}
+<!-- <script src="//cdn.ckeditor.com/4.4.7/full-all/ckeditor.js"></script>
+<script type="text/javascript">
+  CKEDITOR.replace( 'resume' );
+  CKEDITOR.config.extraPlugins = 'codesnippet';
+  CKEDITOR.config.height = 400;
+
+  $(document).ready(function() {
+      $('.dateinput').datepicker({ format: "yyyy/mm/dd" });
+  });
+</script> -->
+{% endblock %}

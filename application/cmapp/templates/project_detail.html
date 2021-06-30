@@ -1,0 +1,1252 @@
+{% extends 'base_template.html' %}
+{% load humanize %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block style %}
+<link href="{% static 'resume/css/progressbarcircle.css' %}" rel="stylesheet"/>
+<link href="{% static 'resume/css/timeline.css' %}" rel="stylesheet"/>
+<link href="{% static 'resume/css/backtotop.css' %}" rel="stylesheet"/>
+<link href="{% static 'resume/css/default.css' %}" rel="stylesheet"/>
+<style>
+    iframe {
+     width: 100%;
+     height: 500px;
+    }
+    .table {white-space:nowrap}
+    .borderless td, .borderless th {
+        border: none;
+    }
+    #id_project, #id_budget_title, #id_budget_owner, #id_area, #id_type {
+      background:white;
+    }
+    #id_money_0 {
+      background-color: white;
+      width: 40%;
+      border-style: solid;
+      border-left-width: 3px;
+      border-left-color: #00DDDD;
+      border-top: none;
+      border-bottom: none;
+      border-right: none;
+      color: black;
+      font-weight: 200;
+      padding: 12px 12px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    #id_money_1 {
+      background-color: white;
+      width: 60%;
+      border-style: solid;
+      border-left-width: 3px;
+      border-left-color: #00DDDD;
+      border-top: none;
+      border-bottom: none;
+      border-right: none;
+      color: black;
+      font-weight: 200;
+      padding: 12px 12px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    hr.hrpromet {
+      border-top: 2px solid #00AA88;
+    }
+
+    hr.hrprometwhite {
+      border-top: 2px solid white;
+    }
+
+    .modal-full {
+      min-width: 100%;
+      margin: 0;
+    }
+
+    .modal-full .modal-content {
+      min-height: 100vh;
+    }
+</style>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css">
+
+{% endblock %}
+
+{% block ttl %}| {{ project.project_title|upper }}{% endblock %}}}}
+
+{% block ul %}
+
+      <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#resume">Resumen y objetivos</a></li>
+      <!-- {% if project.display_milestone == True %}
+      <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#milestone">Tabla de Hitos</a></li>
+      {% endif %}
+      {% if project.todo_set.count == 0 %}
+
+      {% else %}
+      <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#task">Plan de Tareas</a></li>
+      <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#risk">Observaciones</a></li>
+      {% endif %} -->
+      <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#note">Notas</a></li>
+      <!-- <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#presupuesto">presupuesto</a></li> -->
+      <!-- <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#archivos">Archivos</a></li> -->
+
+      <li class="nav-item">
+
+          {% if project.display_milestone == False %}
+          <form class="" action="{% url 'project:activate_milestone' project.id %}" method="post">
+              {% csrf_token %}
+              <span style="color:white">Activar tabla Hitos</span>
+              <button class="btn btn-outline-light" type="submit"><i class='fa fa-eye'></i></button>
+          </form>
+          {% else %}
+          <form class="" action="{% url 'project:deactivate_milestone' project.id %}" method="post">
+              {% csrf_token %}
+              <span class="text-warning">Desactivar tabla Hitos</span>
+              <button class="btn btn-outline-warning" type="submit"><i class='fa fa-eye-slash'></i></button>
+          </form>
+          {% endif %}
+
+      </li>
+      <br>
+
+{% endblock %}
+
+{% block title %}
+<!-- Modal Presupuesto-->
+{% if user.is_authenticated %}
+<div class="modal fade" id="modal_budget" data-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-full modal-dialog-scrollable">
+        <div class="modal-content bg-light">
+            <div class="modal-header">
+                <h4 class="modal-title text-dark" id="staticBackdropLabel">
+                    .Agregar nuevo Presupuesto
+                </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+
+                <form class="" action="{% url 'project:add_budget_in_project' project.id %}" method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit">Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="modal fade" id="modal_budget" data-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="alert alert-primary" role="alert">
+        Debes estar autenticado para poder agregar presupuestos
+      </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Riesgo-->
+{% if user.is_authenticated %}
+{% for todo in object.todo_set.all %}
+<div class="modal fade" id="modal_todo{{ todo.id }}" data-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-full modal-dialog-scrollable">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h4 class="modal-title text-light" id="staticBackdropLabel">
+                    .Riesgos | condiciones: {{ todo.todo_title }} -
+                    <span class="text-info">{{ todo.deadline_date|date:"d M Y" }}</span>
+                    <span class="text-info">Week {{ todo.deadline_date|date:"W" }}</span>
+                </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+              <form class="" action="{% url 'project:update_mark_todo' todo.id %}" method="post">
+                  {% csrf_token %}
+                  <div class="form-group">
+                      <input type="hidden" name="todo" value="{{ todo.id }}">
+                      <input type="hidden" name="user" value="{{ user.id }}">
+                      <div class="form-group">
+                        <label for="id_info" class="text-info">Ingresar nueva observación</label>
+                          <div class="input-group mb-3">
+                            <textarea class="form-control text-light" id="id_info" name="info" rows="4" required></textarea>
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-info" type="submit">Enviar</button>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+              </form>
+              <div class="table-responsive">
+                <table class="table borderless text-info table-striped table-sm text-wrap">
+                  <thead class="bg-info">
+                    <tr>
+                      <th scope="col">Fecha</th>
+                      <th scope="col">Registrado por</th>
+                      <th scope="col" style="width:75%">Riesgo|condición</th>
+                      <!--<th scope="col">Acción</th>-->
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for risknotes in todo.risknote_set.all %}
+                    <tr>
+                      <th scope="row"><span style="color:#00AA88"><i class="fa fa-caret-right">
+                      </i></span> {{ risknotes.pub_date|date:"d/M/Y" }}</th>
+                      <td>{{ risknotes.user.first_name }} {{ risknotes.user.last_name }}</td>
+                      <td>{{ risknotes.info|safe }}</td>
+                      <!--<th><i class="fa fa-edit"></i></th>-->
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+{% for todo in object.todo_set.all %}
+<div class="modal fade" id="modal_todo{{ todo.id }}" data-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="alert alert-primary" role="alert">
+        Debes estar autenticado para poder agregar notas en tareas
+      </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Modal ButtonGroup Table Plan Project-->
+<div class="modal fade" id="modalTableTaskPlan" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-full modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="staticBackdropLabel"><span style="color:#bb105a">.Plan de tareas del proyecto</span> {{ object.project_title }}, Semana Actual: {% now "W" %}</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="progress">
+            {% if get_percentage_done == 100 %}
+            <div class="progress-bar progress-bar-striped progress-bar-animated massive-font"
+                 role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0"
+                 aria-valuemax="100">
+                100% - todas las tareas completadas
+            </div>
+            {% else %}
+            <div class="progress-bar progress-bar-striped progress-bar-animated massive-font"
+                 role="progressbar" style="width: {{get_percentage_done|floatformat:0|intcomma}}%"
+                 aria-valuenow="{{get_percentage_done|floatformat:0|intcomma}}" aria-valuemin="0"
+                 aria-valuemax="100">
+                {{ get_percentage_done|floatformat:0|intcomma}}%
+            </div>
+            {% endif %}
+            <div class="progress-bar massive-font bgr-lef" role="progressbar"
+                 style="width: {{get_percentage_left|floatformat:0|intcomma}}%"
+                 aria-valuenow="{{get_percentage_left|floatformat:0|intcomma}}" aria-valuemin="0"
+                 aria-valuemax="100">
+                <!--0%-->
+            </div>
+        </div>
+        <hr class="hrprometwhite">
+        <table class="table borderless text-info table-striped table-sm" id="sortTableTaskPlan">
+          <thead>
+              <tr>
+                <th scope="col" style="width: 75%">Actividades</th>
+                <th scope="col">Responsable</th>
+                <th scope="col">Estado</th>
+                {% if get_percentage_done == 100 %}
+                  <th>Planificado</th>
+                  <th>Termino</th>
+                {% else %}
+                  <th scope="col" style="background-color: #bb105a">Planificado</th>
+                  <th scope="col" style="background-color: #bb105a">Terminado</th>
+                {% endif %}
+                <th class="bg-dark text-light">Analisis</th>
+              </tr>
+          </thead>
+          <tbody>
+            {% for todo in object.todo_set.all %}
+            <tr>
+                {% if todo.state == True %}
+                <th style="color: #00AA88">
+                      <a href="{% url 'admin:cmapp_todo_change' todo.id%}" target="_blank" class="text-warning"><i class="fa fa-edit"></i></a>
+                      {{ todo.todo_title }}
+
+                        <div class="float-right">
+                            <a href="" data-dismiss="modal" class="text-secondary" data-toggle="modal" data-target="#modal_todo{{ todo.id }}">
+                                <small>
+                                    <i class="fa fa-info-circle"></i>
+                                    info(<span class="text-info">{{ todo.risknote_set.all.count }}</span>)
+                                </small>
+                            </a>
+                        </div>
+                </th>
+                <td>{{ todo.collaborator.user.first_name }} {{ todo.collaborator.user.last_name }}</td>
+
+                <td>
+                    <div class="custom-control custom-checkbox">
+                            <i class="fa fa-check"></i>
+                    </div>
+                </td>
+
+                {% else %}
+                <th style="color: #6C757D">
+                      <a href="{% url 'admin:cmapp_todo_change' todo.id%}" target="_blank" class="text-warning"><i class="fa fa-edit"></i></a>
+                      {{ todo.todo_title }}
+
+                      <i class="fa fa-spinner text-warning"></i>
+                        <div class="float-right">
+                        <a href="" data-dismiss="modal" class="text-secondary" data-toggle="modal" data-target="#modal_todo{{ todo.id }}">
+                            <small><i class="fa fa-info-circle"></i> info(<span class="text-info">{{ todo.risknote_set.all.count }}</span>)</small>
+                        </a>
+                        </div>
+                </th>
+                <td>{{ todo.collaborator.user.first_name }} {{ todo.collaborator.user.last_name }}</td>
+
+                <td>
+                    <div class="custom-control custom-checkbox">
+                        <form class="" action="{% url 'project:todofinished' todo.id %}" method="post">
+                            {% csrf_token %}
+                            <input onChange="this.form.submit()" type="radio">
+                        </form>
+                    </div>
+                </td>
+                {% endif %}
+                <td>
+                    <div class="float-right">
+                        W{{ todo.deadline_date|date:"W" }}
+                        [{{ todo.deadline_date|date:"Y" }}]
+                        <span class="d-inline-block" tabindex="0" data-toggle="tooltip"
+                              title="{{ todo.deadline_date|timeuntil }}"></span>
+                    </div>
+                </td>
+                <td>{{ todo.done_date|date:"M/d/Y" }}</td>
+                <td>
+                  {% if todo.diff_days == True %}
+                  <i class="fa fa-clock text-info"></i> en tiempo
+                  {% elif todo.diff_days == False %}
+                  <i class="fa fa-clock text-warning"></i> terminada atrasada
+                  {% else %}
+
+                  {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <td colspan="6" style="height: 8%">
+            <small>
+              <i class="fa fa-calendar"></i> Fecha Planificada de termino: {{ object.planned_date|date:"d/M/Y" }}, quedan {{ object.planned_date|timeuntil }}.
+              <div class="float-right">
+                Tareas terminadas: {{todo_done}} de {{todo_total}}
+                [{{ get_percentage_done|floatformat:0|intcomma}}%] <i></i>
+              </div>
+            <br>
+              <i class="fa fa-calendar"></i> Fecha de termino real: {{ object.done_date|date:"d/M/Y" }}
+            </small>
+          </td>
+      </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableRisk"><i class="fa fa-exclamation-circle"></i> Ver Observaciones</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ButtonGroup Table HITO Project-->
+{% if project.display_milestone == True %}
+<div class="modal fade" id="modalTableMilestonePlan" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-full modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="staticBackdropLabel"><span style="color:#bb105a">.Plan de tareas del proyecto</span> {{ object.project_title }}, Semana Actual: {% now "W" %}</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <hr class="hrprometwhite">
+        <table class="table borderless text-info table-striped table-sm" id="sortTableMilestone">
+          <thead>
+              <tr>
+                <th scope="col" style="width: 75%">Actividades</th>
+                <th scope="col">Responsable</th>
+                <th scope="col">Estado</th>
+                {% if get_percentage_done == 100 %}
+                  <th>Planificado</th>
+                  <th>Termino</th>
+                {% else %}
+                  <th scope="col" style="background-color: #bb105a">Planificado</th>
+                  <th scope="col" style="background-color: #bb105a">Terminado</th>
+                {% endif %}
+              </tr>
+          </thead>
+          <tbody>
+            {% for todo in object.milestone_set.all %}
+            <tr>
+                {% if todo.state == True %}
+                <th style="color: #00AA88">
+                    <small>#{{ forloop.counter }} - {{ todo.milestone_title }}
+
+                    </small>
+                </th>
+                <td>
+                  <small>
+                  {{ todo.collaborator }}
+                  </small>
+                </td>
+
+                <td>
+                    <div class="custom-control custom-checkbox">
+                            <i class="fa fa-check"></i>
+                    </div>
+                </td>
+
+                {% else %}
+                <th style="color: #6C757D">
+                    <small>#{{ forloop.counter }} - {{ todo.milestone_title }}
+
+                    </small>
+                </th>
+                <td>
+                  <small>
+                  {% if todo.collaborator == None %}
+                  sin asignación
+                  {% else %}
+                  {{ todo.collaborator }}
+                  {% endif %}
+                  </small>
+                </td>
+
+                <td>
+                  {% if todo.collaborator == None %}
+                  <i class="fa fa-eye-slash"></i>
+                  {% else %}
+                    <div class="custom-control custom-checkbox">
+                        <form class="" action="{% url 'project:milestonefinished' todo.id %}" method="post">
+                            {% csrf_token %}
+                            <input onChange="this.form.submit()" type="radio">
+                        </form>
+                    </div>
+                  {% endif %}
+                </td>
+                {% endif %}
+                <td>
+                  {% if todo.deadline_date == None %}
+                  <small>sin fecha</small>
+                  {% else %}
+                    <div class="float-right">
+                        W{{ todo.deadline_date|date:"W" }}
+                        [{{ todo.deadline_date|date:"Y" }}]
+                        <span class="d-inline-block" tabindex="0" data-toggle="tooltip"
+                              title="{{ todo.deadline_date|timeuntil }}"></span>
+                    </div>
+                  {% endif %}
+                </td>
+                <td>{{ todo.done_date|date:"M/d/Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <!-- <td colspan="5" style="height: 8%">
+            <small>
+              <i class="fa fa-calendar"></i> Fecha Planificada de termino: {{ object.planned_date|date:"d/M/Y" }}, quedan {{ object.planned_date|timeuntil }}.
+            <br>
+              <i class="fa fa-calendar"></i> Fecha de termino real: {{ object.done_date|date:"d/M/Y" }}</small>
+          </td> -->
+      </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableRisk"><i class="fa fa-exclamation-circle"></i> Ver Observaciones</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Modal ButtonGroup Risk Project-->
+<div class="modal fade" id="modalTableRisk" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-full modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="staticBackdropLabel"><span style="color:#bb105a">.Observaciones </span></h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table class="table borderless text-info table-striped table-sm" id="sortTableRisk">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Tarea: observación</th>
+              <th scope="col">Editar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for todo in object.todo_set.all %}
+              {% for risknotes in todo.risknote_set.all %}
+              <tr>
+                <th scope="row">
+                  <span style="color:#00AA88"><i class="fa fa-caret-right">
+                  </i></span> <i class="fa fa-calendar"></i>  {{ risknotes.pub_date|date:"d-m-Y" }}
+                </th>
+                <th style="white-space: normal;">
+                  <span class="weak" style="color:#00AA88">{{ todo.todo_title }}</span>:
+                  <!-- por
+                  <span style="color:#00AA88">{{ risknotes.user.first_name }} {{ risknotes.user.last_name }}</span>
+                  <br> -->
+                  <small>{{ risknotes.info|safe }}</small>
+                </th>
+                <td>
+                  <div class="float-right">
+                    <a href="{% url 'admin:cmapp_risknote_change' risknotes.id%}" target="_blank">
+                      <button type="button" class="btn btn-outline-warning btn-sm" name="button">
+                      <i class="fa fa-edit"></i>
+                      </button>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ButtonGroup Notes Project-->
+<div class="modal fade" id="modalTableNotes" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-full modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="staticBackdropLabel"><span style="color:#bb105a">.Notas </span></h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% for note in object.note_set.all %}
+        <div class="card">
+          <div class="card-header">
+            <a style="color:#bb105a" data-toggle="collapse" href="#collapseNote_{{ note.id }}" aria-expanded="false" aria-controls="collapseNote"><i class="fa fa-plus"></i></a>
+            {{ note.note_title }}
+            <div class="float-right">
+              <div class="btn-group" role="group" aria-label="Basic example">
+                <!-- <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#deletenote_{{ note.id }}"><i class="fa fa-trash"></i></button> -->
+                <a href="{% url 'admin:cmapp_note_change' note.id%}" target="_blank">
+                  <button type="button" class="btn btn-outline-warning">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!--Borrar Nota MODAL-->
+          <div class="modal fade" id="deletenote_{{ note.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Confirma que quieres eliminar</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  {{ note.note_title }}
+                </div>
+                <!-- <div class="modal-footer">
+                  <a href="{% url 'project:noteDelete' note.id %}"><i class="fa fa-trash"></i></a>
+                </div> -->
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body collapse" id="collapseNote_{{ note.id }}">
+            <p class="card-text">{{ note.body|safe }}</p>
+          </div>
+        </div>
+        <br>
+        {% empty %}
+        Este Proyecto aun no cuenta con notas
+        {% endfor %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal ButtonGroup Budget Project-->
+<div class="modal fade" id="modalTableBudget" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-full modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="staticBackdropLabel"><span style="color:#bb105a">.Presupuesto </span></h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="float-right">
+          <small><a href="" class="text-info" data-toggle="modal" data-dismiss="modal" data-target="#modal_budget">Agregar nuevo <i class="fa fa-plus-circle"></i></a></small>
+        </div>
+        <table class="table borderless text-info table-striped table-sm" id="sortTableBudget">
+        	<thead>
+        		<tr>
+        			<th><h3>Titulo</h3></th>
+        			<th><h3>Tipo</h3></th>
+        			<th><h3>Area</h3></th>
+              <th><h3>Presupuesto</h3></th>
+        		</tr>
+        	</thead>
+        	<tbody>
+            {% for budget in object.budget_set.all %}
+        		<tr>
+              {% if budget.type == 'Capex' %}
+        			<td><span class="text-warning"><i class="fa fa-credit-card"></i></span> <small>{{ budget.budget_title }}</small></td>
+        			<td><span style="color:#00AA88">{{ budget.type }}</span></td>
+        			<td>{{ budget.area }}</td>
+              <td>{{ budget.money }}</td>
+              {% else %}
+              <td><span class="text-warning"><i class="fa fa-credit-card"></i></span> <small>{{ budget.budget_title }}</small></td>
+        			<td><span style="color:#bb105a">{{ budget.type }}</span></td>
+        			<td>{{ budget.area }}</td>
+              <td>{{ budget.money }}</td>
+              {% endif %}
+        		</tr>
+            {% endfor %}
+            <tr>
+              <td><i class="fa fa-credit-card"></i> Total Capex:</td>
+              <td></td>
+              <td></td>
+              <td>{{total_capex}}</td>
+            </tr>
+            <tr>
+              <td><i class="fa fa-credit-card"></i> Total Opex:</td>
+              <td></td>
+              <td></td>
+              <td>{{total_opex}}</td>
+            </tr>
+        	</tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="resume-section" id="resume">
+    <div class="resume-section-content">
+      <!--head-->
+      <h1 class="mb-0">
+        <span style="color:#bb105a">.</span>{{ object.project_title }}
+        <div class="float-right">
+          <button type="button" class="position-fixed btn btn-dark" style="right: 10px;overflow: hidden;" name="button" data-toggle="popover" title="Editar Proyecto"><a class="text-secondary" href="{% url 'admin:cmapp_project_change' object.id %}" target="_blank"><i class="fa fa-cog fa-spin fa-1x fa-fw"></i></a></button>
+        </div>
+      </h1>
+
+      <br><br>
+
+      <!--subheading-->
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-subtitle mb-2 text-muted">Año: {{ object.year }}</h6>
+          <p class="card-text">
+            <strong>Categorias</strong>:
+            {% for cat in project.category.all %}
+            {% if not forloop.first %}<span style="color:white"> -</span> {% endif %}
+            {{ cat }}
+            {% endfor %}
+            <br>
+            <strong>Especialistas</strong>:
+            {% for users in project.collaborator.all %}
+            {% if not forloop.first %}<span style="color:white"> -</span> {% endif %}
+            {{ users.user.first_name }}
+            {{ users.user.last_name }}
+            {{ users.country }}
+            {% endfor %}
+            <br>
+            <strong>Áreas involucradas</strong>:
+            {% for areas in project.area.all %}
+            {% if not forloop.first %}<span style="color:white"> -</span> {% endif %}
+            {{ areas }}
+            {% endfor %}
+            <br>
+            <strong>Fecha planificada: </strong> {{ project.planned_date }}
+            <hr class="hrpromet">
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableTaskPlan"><i class="fa fa-table"></i> Plan de Tareas</button>
+              {% if object.display_milestone == True %}
+              <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableMilestonePlan"><i class="fa fa-table"></i> Hitos</button>
+              {% endif %}
+              <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableRisk"><i class="fa fa-exclamation-circle"></i> Observaciones</button>
+              <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableNotes"><i class="fa fa-sticky-note"></i> Notas</button>
+              <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalTableBudget"><i class="fa fa-credit-card"></i> Presupuesto</button>
+              {% for file in object.file_set.all %}
+              <button type="button" class="btn btn-outline-secondary"><a href="{{ file.repository }}" target="_blank"><i class="fa fa-file"></i> Repositorio</a></button>
+              {% empty %}
+              <button type="button" class="btn btn-outline-secondary" disabled><i class="fa fa-eye-slash"></i> sin repositorio</button>
+              {% endfor %}
+            </div>
+        </div>
+      </div>
+      <br>
+
+      <!--resume-->
+      <div class="card">
+        <h2 class="card-header"><span style="color: #00AA88">.Resumen y Objetivos:</span></h2>
+        <div class="card-body">
+          <p class="card-text">{{ project.resume|safe }}</p>
+        </div>
+      </div>
+
+      <!-- <hr class="hrpromet"> -->
+
+      <!--Table Hitos-->
+      <!-- {% if project.display_milestone == True %}
+      <div class="subheading mb-5">
+          <ul class="navbar-nav">
+              <li>
+                  <h2><span style="color:#bb105a" id="milestone">.Tabla de hitos</span>
+                    <div class="float-right">
+                      Semana Actual: {% now "W" %}
+                    </div>
+                  </h2> -->
+                  <!-- <div class="progress">
+                      {% if get_percentage_done == 100 %}
+                      <div class="progress-bar progress-bar-striped progress-bar-animated massive-font"
+                           role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0"
+                           aria-valuemax="100">
+                          100% - todas las tareas completadas
+                      </div>
+                      {% else %}
+                      <div class="progress-bar progress-bar-striped progress-bar-animated massive-font"
+                           role="progressbar" style="width: {{get_percentage_done|floatformat:0|intcomma}}%"
+                           aria-valuenow="{{get_percentage_done|floatformat:0|intcomma}}" aria-valuemin="0"
+                           aria-valuemax="100">
+                          {{ get_percentage_done|floatformat:0|intcomma}}%
+                      </div>
+                      {% endif %}
+                      <div class="progress-bar massive-font bgr-lef" role="progressbar"
+                           style="width: {{get_percentage_left|floatformat:0|intcomma}}%"
+                           aria-valuenow="{{get_percentage_left|floatformat:0|intcomma}}" aria-valuemin="0"
+                           aria-valuemax="100">
+                          0%
+                      </div>
+                  </div> -->
+              <!-- </li> -->
+
+              <!--table-->
+
+              <!-- <table class="table borderless text-info table-striped table-sm" id="sortTableMilestone">
+                <thead>
+                    <tr>
+                      <th scope="col" style="width: 75%">Actividades</th>
+                      <th scope="col">Responsable</th>
+                      <th scope="col">Estado</th>
+                      {% if get_percentage_done == 100 %}
+                        <th>Planificado</th>
+                        <th>Termino</th>
+                      {% else %}
+                        <th scope="col" style="background-color: #bb105a">Planificado</th>
+                        <th scope="col" style="background-color: #bb105a">Terminado</th>
+                      {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                  {% for todo in object.milestone_set.all %}
+                  <tr>
+                      {% if todo.state == True %}
+                      <th style="color: #00AA88">
+                          <small>#{{ forloop.counter }} - {{ todo.milestone_title }}
+
+                          </small>
+                      </th>
+                      <td>
+                        <small>
+                        {{ todo.collaborator }}
+                        </small>
+                      </td>
+
+                      <td>
+                          <div class="custom-control custom-checkbox">
+                                  <i class="fa fa-check"></i>
+                          </div>
+                      </td>
+
+                      {% else %}
+                      <th style="color: #6C757D">
+                          <small>#{{ forloop.counter }} - {{ todo.milestone_title }}
+
+                          </small>
+                      </th>
+                      <td>
+                        <small>
+                        {% if todo.collaborator == None %}
+                        sin asignación
+                        {% else %}
+                        {{ todo.collaborator }}
+                        {% endif %}
+                        </small>
+                      </td>
+
+                      <td>
+                        {% if todo.collaborator == None %}
+                        <i class="fa fa-eye-slash"></i>
+                        {% else %}
+                          <div class="custom-control custom-checkbox">
+                              <form class="" action="{% url 'project:milestonefinished' todo.id %}" method="post">
+                                  {% csrf_token %}
+                                  <input onChange="this.form.submit()" type="radio">
+                              </form>
+                          </div>
+                        {% endif %}
+                      </td>
+                      {% endif %}
+                      <td>
+                        {% if todo.deadline_date == None %}
+                        <small>sin fecha</small>
+                        {% else %}
+                          <div class="float-right">
+                              W{{ todo.deadline_date|date:"W" }}
+                              [{{ todo.deadline_date|date:"Y" }}]
+                              <span class="d-inline-block" tabindex="0" data-toggle="tooltip"
+                                    title="{{ todo.deadline_date|timeuntil }}"></span>
+                          </div>
+                        {% endif %}
+                      </td>
+                      <td>{{ todo.done_date|date:"M/d/Y" }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody> -->
+                <!-- <td colspan="5" style="height: 8%">
+                  <small>
+                    <i class="fa fa-calendar"></i> Fecha Planificada de termino: {{ object.planned_date|date:"d/M/Y" }}, quedan {{ object.planned_date|timeuntil }}.
+                  <br>
+                    <i class="fa fa-calendar"></i> Fecha de termino real: {{ object.done_date|date:"d/M/Y" }}</small>
+                </td> -->
+            <!-- </table>
+          </ul>
+      </div> -->
+      <!-- <hr class="hrpromet"> -->
+      <!-- {% endif %} -->
+
+      {% if project.todo_set.count == 0 %}
+        <hr class="hrpromet">
+        Agregar tareas en este proyecto desde el panel de administración
+        <a class="text-secondary" href="{% url 'admin:cmapp_project_change' object.id %}" target="_blank">
+            <i class="fa fa-cog fa-spin fa-1x fa-fw"></i>
+        </a>
+      {% else %}
+      <!--Table task-->
+      <!-- <div class="subheading mb-5">
+          <ul class="navbar-nav">
+              <li>
+                  <h2><span style="color:#bb105a" id="task">.Plan de Tareas</span>
+                    <div class="float-right">
+                      Semana Actual: {% now "W" %}
+                    </div>
+                  </h2>
+                  <div class="progress">
+                      {% if get_percentage_done == 100 %}
+                      <div class="progress-bar progress-bar-striped progress-bar-animated massive-font"
+                           role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0"
+                           aria-valuemax="100">
+                          100% - todas las tareas completadas
+                      </div>
+                      {% else %}
+                      <div class="progress-bar progress-bar-striped progress-bar-animated massive-font"
+                           role="progressbar" style="width: {{get_percentage_done|floatformat:0|intcomma}}%"
+                           aria-valuenow="{{get_percentage_done|floatformat:0|intcomma}}" aria-valuemin="0"
+                           aria-valuemax="100">
+                          {{ get_percentage_done|floatformat:0|intcomma}}%
+                      </div>
+                      {% endif %}
+                      <div class="progress-bar massive-font bgr-lef" role="progressbar"
+                           style="width: {{get_percentage_left|floatformat:0|intcomma}}%"
+                           aria-valuenow="{{get_percentage_left|floatformat:0|intcomma}}" aria-valuemin="0"
+                           aria-valuemax="100">
+                          0%
+                      </div>
+                  </div>
+              </li>
+              <br>
+
+              <table class="table borderless text-info table-striped table-sm" id="sortTableTask">
+                <thead>
+                    <tr>
+                      <th scope="col" style="width: 75%">Actividades</th>
+                      <th scope="col">Responsable</th>
+                      <th scope="col">Estado</th>
+                      {% if get_percentage_done == 100 %}
+                        <th>Planificado</th>
+                        <th>Termino</th>
+                      {% else %}
+                        <th scope="col" style="background-color: #bb105a">Planificado</th>
+                        <th scope="col" style="background-color: #bb105a">Terminado</th>
+                      {% endif %}
+                      <th class="bg-dark text-light">
+                          <i class="fa fa-bars"></i>
+                      </th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% for todo in object.todo_set.all %}
+                  <tr>
+                      {% if todo.state == True %}
+                      <th style="color: #00AA88">
+                          <small>
+                            <a href="{% url 'admin:cmapp_todo_change' todo.id%}" target="_blank" class="text-light"><i class="fa fa-edit"></i></a>
+                            {{ todo.todo_title }}
+
+                              <div class="float-right">
+                                  <a href="" class="text-secondary" data-toggle="modal" data-target="#modal_todo{{ todo.id }}">
+                                      <small>
+                                          <i class="fa fa-info-circle"></i>
+                                          info(<span class="text-info">{{ todo.risknote_set.all.count }}</span>)
+                                      </small>
+                                  </a>
+                              </div>
+                          </small>
+                      </th>
+                      <td><small>{{ todo.collaborator.user.first_name }} {{ todo.collaborator.user.last_name }}</small></td>
+
+                      <td>
+                          <div class="custom-control custom-checkbox">
+                                  <i class="fa fa-check"></i>
+                          </div>
+                      </td>
+
+                      {% else %}
+                      <th style="color: #6C757D">
+                          <small>
+                            <a href="{% url 'admin:cmapp_todo_change' todo.id%}" target="_blank" class="text-light"><i class="fa fa-edit"></i></a>
+                            {{ todo.todo_title }}
+
+                            <i class="fa fa-spinner text-warning"></i>
+                              <div class="float-right">
+                              <a href="" class="text-secondary" data-toggle="modal" data-target="#modal_todo{{ todo.id }}">
+                                  <small><i class="fa fa-info-circle"></i> info(<span class="text-info">{{ todo.risknote_set.all.count }}</span>)</small>
+                              </a>
+                              </div>
+                          </small>
+                      </th>
+                      <td><small>{{ todo.collaborator.user.first_name }} {{ todo.collaborator.user.last_name }}</small></td>
+
+                      <td>
+                          <div class="custom-control custom-checkbox">
+                              <form class="" action="{% url 'project:todofinished' todo.id %}" method="post">
+                                  {% csrf_token %}
+                                  <input onChange="this.form.submit()" type="radio">
+                              </form>
+                          </div>
+                      </td>
+                      {% endif %}
+                      <td>
+                          <div class="float-right">
+                              W{{ todo.deadline_date|date:"W" }}
+                              [{{ todo.deadline_date|date:"Y" }}]
+                              <span class="d-inline-block" tabindex="0" data-toggle="tooltip"
+                                    title="{{ todo.deadline_date|timeuntil }}"></span>
+                          </div>
+                      </td>
+                      <td>{{ todo.done_date|date:"M/d/Y" }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <td colspan="5" style="height: 8%">
+                  <small>
+                    <i class="fa fa-calendar"></i> Fecha Planificada de termino: {{ object.planned_date|date:"d/M/Y" }}, quedan {{ object.planned_date|timeuntil }}.
+                    <div class="float-right">
+                      Tareas terminadas: {{todo_done}} de {{todo_total}}
+                      [{{ get_percentage_done|floatformat:0|intcomma}}%] <i></i>
+                    </div>
+                  <br>
+                    <i class="fa fa-calendar"></i> Fecha de termino real: {{ object.done_date|date:"d/M/Y" }}
+                  </small>
+                </td>
+            </table>
+          </ul>
+      </div> -->
+
+      <!-- <hr class="hrpromet"> -->
+
+      <!--Riesgos-->
+      <!-- <h2>
+        <span style="color:#bb105a" id="risk">.Observaciones </span>
+      </h2>
+      <div class="table-responsive-sm">
+        <table class="table borderless text-info table-striped table-sm" id="sortTableRisk">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Tarea</th>
+              <th scope="col">acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for todo in object.todo_set.all %}
+              {% for risknotes in todo.risknote_set.all %}
+              <tr>
+                <td scope="row">
+                  <span style="color:#00AA88"><i class="fa fa-caret-right">
+                  </i></span> <i class="fa fa-calendar"></i>  {{ risknotes.pub_date|date:"d-m-Y" }}
+                </td>
+                <td style="white-space: normal;">
+                  <span style="color:#bb105a">{{ todo.todo_title }}</span><br>
+                  por
+                  <span style="color:#00AA88">{{ risknotes.user.first_name }} {{ risknotes.user.last_name }}</span>
+                  <br>
+                  {{ risknotes.info|safe }}
+                </td>
+                <th>
+                  <div class="float-right">
+                    <a href="{% url 'admin:cmapp_risknote_change' risknotes.id%}" target="_blank">
+                      <button type="button" class="btn btn-outline-warning btn-sm" name="button">
+                      <i class="fa fa-edit"></i>
+                      </button>
+                    </a>
+                  </div>
+                </th>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+          </table>
+        </div>
+
+      {% endif %}
+      <hr class="hrpromet">
+
+
+      <!--Notas-->
+          <h2><span style="color:#bb105a" id="note">.Notas</span></h2>
+
+      {% for note in object.note_set.all %}
+      <div class="card">
+        <div class="card-header">
+          <a style="color:#bb105a" data-toggle="collapse" href="#collapseNote_{{ note.id }}" aria-expanded="false" aria-controls="collapseNote"><i class="fa fa-plus"></i></a>
+          {{ note.note_title }}
+          <div class="float-right">
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <!-- <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#deletenote_{{ note.id }}"><i class="fa fa-trash"></i></button> -->
+              <a href="{% url 'admin:cmapp_note_change' note.id%}" target="_blank">
+                <button type="button" class="btn btn-outline-warning">
+                  <i class="fa fa-edit"></i>
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!--Borrar Nota MODAL-->
+        <div class="modal fade" id="deletenote_{{ note.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Confirma que quieres eliminar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                {{ note.note_title }}
+              </div>
+              <div class="modal-footer">
+                <a href="{% url 'project:noteDelete' note.id %}"><i class="fa fa-trash"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body collapse" id="collapseNote_{{ note.id }}">
+          <p class="card-text">{{ note.body|safe }}</p>
+        </div>
+      </div>
+      <br>
+      {% empty %}
+      Este Proyecto aun no cuenta con notas
+      {% endfor %}
+
+      <small>
+        <a data-toggle="collapse" href="#collapseAddNote" aria-expanded="false" aria-controls="collapseAddNote">Agregar nueva nota <i class="fa fa-plus-circle"></i></a>
+      </small>
+
+      <!--agregar nota-->
+      <div class="card-body collapse" id="collapseAddNote">
+        <form class="" action="{% url 'project:add_note_in_project' project.id %}" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <input type="hidden" name="project" value="{{ project.id }}">
+              <label for="exampleFormControlInput1" class="form-label">Titulo</label>
+              <input type="text" class="form-control bg-light text-dark" name="note_title" id="note_title" required>
+            </div>
+            <div class="mb-3">
+              <label for="exampleFormControlTextarea1" class="form-label">Descripción</label>
+              <textarea class="form-control" name="body" id="body" rows="10" required></textarea>
+            </div>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit">Enviar</button>
+            </div>
+        </form>
+      </div>
+
+      <!--presupuesto-->
+      <!-- <hr class="hrpromet">
+
+      <h2><span style="color:#bb105a" id="presupuesto">.Presupuesto</span></h2>
+      <div class="float-right">
+        <small><a href="" class="text-secondary" data-toggle="modal" data-target="#modal_budget">Agregar nuevo <i class="fa fa-plus-circle"></i></a></small>
+      </div> -->
+      <!-- <table class="container">
+      	<thead>
+      		<tr>
+      			<th><h3>Titulo</h3></th>
+      			<th><h3>Tipo</h3></th>
+      			<th><h3>Area</h3></th>
+            <th><h3>Presupuesto</h3></th>
+      		</tr>
+      	</thead>
+      	<tbody>
+          {% for budget in object.budget_set.all %}
+      		<tr>
+            {% if budget.type == 'Capex' %}
+      			<td><span class="text-warning"><i class="fa fa-credit-card"></i></span> <small>{{ budget.budget_title }}</small></td>
+      			<td><span style="color:#00AA88">{{ budget.type }}</span></td>
+      			<td>{{ budget.area }}</td>
+            <td>{{ budget.money }}</td>
+            {% else %}
+            <td><span class="text-warning"><i class="fa fa-credit-card"></i></span> <small>{{ budget.budget_title }}</small></td>
+      			<td><span style="color:#bb105a">{{ budget.type }}</span></td>
+      			<td>{{ budget.area }}</td>
+            <td>{{ budget.money }}</td>
+            {% endif %}
+      		</tr>
+          {% endfor %}
+          <tr>
+            <td><i class="fa fa-credit-card"></i> Total Capex:</td>
+            <td></td>
+            <td></td>
+            <td>{{total_capex}}</td>
+          </tr>
+          <tr>
+            <td><i class="fa fa-credit-card"></i> Total Opex:</td>
+            <td></td>
+            <td></td>
+            <td>{{total_opex}}</td>
+          </tr>
+      	</tbody>
+      </table> -->
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+
+<script>
+    $(window).on('load', function() {
+        $('#modalsuccess').modal('show');
+    });
+</script>
+</script>
+<script src="{% static 'resume/js/backtotop.js' %}"></script>
+<script src="{% static 'resume/js/highlight.pack.js' %}"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script src="//cdn.ckeditor.com/4.4.7/full-all/ckeditor.js"></script>
+<script type="text/javascript">
+  CKEDITOR.replace( 'body', {
+    extraPlugins: 'codesnippet'
+} );
+</script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
+<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+
+<script>
+$('#sortTableTask').DataTable({
+        "language": {
+            "url": "{% static 'resume/js/task_datatables.js' %}"
+        },
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": -1,
+        "order": []
+    });
+</script>
+
+<script>
+$('#sortTableTaskPlan').DataTable({
+        "language": {
+            "url": "{% static 'resume/js/task_datatables.js' %}"
+        },
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": -1,
+        "order": []
+    });
+</script>
+
+<script>
+$('#sortTableRisk').DataTable({
+        "language": {
+            "url": "{% static 'resume/js/risk_datatables.js' %}"
+        },
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": 10,
+        "order": []
+    });
+</script>
+
+<script>
+$('#sortTableMilestone').DataTable({
+        "language": {
+            "url": "{% static 'resume/js/milestone_datatables.js' %}"
+        },
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "pageLength": 10,
+        "order": []
+    });
+</script>
+
+<script>
+  $(function () {
+    $("#datetimepicker1").datetimepicker({
+      format: 'DD/MM/YYYY HH:mm',
+    });
+  });
+</script>
+{% endblock %}
